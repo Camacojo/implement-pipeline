@@ -1,4 +1,4 @@
-# claude-implement
+# implement-pipeline
 
 A Claude Code plugin that turns a ticket or a description into a reviewed, verified pull request, in eleven phases with explicit user checkpoints and a resumable state directory.
 
@@ -24,8 +24,8 @@ The skills contain no conventions of any project. Everything they need (code sty
 As a plugin (updates via `/plugin update`):
 
 ```
-/plugin marketplace add <github-user>/claude-implement
-/plugin install implement@claude-implement
+/plugin marketplace add <github-user>/implement-pipeline
+/plugin install implement@implement-pipeline
 ```
 
 Plugin skills are namespaced, so the slash commands become `/implement:implement`, `/implement:implement-review` and so on. Natural language ("implement ABC-123", "review this PR against the project guidelines") triggers them without the prefix.
@@ -33,8 +33,8 @@ Plugin skills are namespaced, so the slash commands become `/implement:implement
 Alternatively, as plain personal skills (short `/implement` names, updates via `git pull`):
 
 ```
-git clone <repo-url> ~/claude-implement
-for d in ~/claude-implement/skills/*; do ln -s "$d" ~/.claude/skills/$(basename "$d"); done
+git clone <repo-url> ~/implement-pipeline
+for d in ~/implement-pipeline/skills/*; do ln -s "$d" ~/.claude/skills/$(basename "$d"); done
 ```
 
 Do not install both ways at once.
