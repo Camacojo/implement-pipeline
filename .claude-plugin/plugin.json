@@ -1,0 +1,9 @@
+{
+    "name": "implement",
+    "version": "1.0.0",
+    "description": "End-to-end delivery pipeline for a functional change: spec with acceptance criteria, plan and plan review, tests first, implementation, code review, verification with evidence, PR and ticket update. Project conventions come from the project's own CLAUDE.md.",
+    "author": {
+        "name": "Karel Visser"
+    },
+    "keywords": ["implement", "pipeline", "tdd", "code-review", "verification", "jira", "pull-request"]
+}

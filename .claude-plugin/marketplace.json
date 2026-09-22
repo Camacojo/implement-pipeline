@@ -1,0 +1,20 @@
+{
+    "name": "claude-implement",
+    "owner": {
+        "name": "Karel Visser"
+    },
+    "metadata": {
+        "description": "The implement pipeline: from ticket to reviewed, verified pull request",
+        "version": "1.0.0"
+    },
+    "plugins": [
+        {
+            "name": "implement",
+            "source": "./",
+            "description": "End-to-end delivery pipeline: spec, plan, tests first, build, review, verify with evidence, PR and ticket update",
+            "version": "1.0.0",
+            "keywords": ["implement", "pipeline", "tdd", "code-review", "verification"],
+            "category": "productivity"
+        }
+    ]
+}
