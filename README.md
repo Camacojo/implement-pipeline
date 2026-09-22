@@ -24,7 +24,7 @@ The skills contain no conventions of any project. Everything they need (code sty
 As a plugin (updates via `/plugin update`):
 
 ```
-/plugin marketplace add <github-user>/implement-pipeline
+/plugin marketplace add Camacojo/implement-pipeline
 /plugin install implement@implement-pipeline
 ```
 
@@ -33,7 +33,7 @@ Plugin skills are namespaced, so the slash commands become `/implement:implement
 Alternatively, as plain personal skills (short `/implement` names, updates via `git pull`):
 
 ```
-git clone <repo-url> ~/implement-pipeline
+git clone https://github.com/Camacojo/implement-pipeline.git ~/implement-pipeline
 for d in ~/implement-pipeline/skills/*; do ln -s "$d" ~/.claude/skills/$(basename "$d"); done
 ```
 
