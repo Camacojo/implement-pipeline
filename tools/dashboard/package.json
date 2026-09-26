@@ -1,0 +1,10 @@
+{
+  "name": "implement-dashboard",
+  "private": true,
+  "type": "module",
+  "description": "Local web dashboard that follows implement-pipeline runs and their agents",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=20" }
+}
