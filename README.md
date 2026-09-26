@@ -7,9 +7,9 @@ A Claude Code plugin that turns a ticket or a description into a reviewed, verif
 | `implement` | orchestrates the six phase skills below in order |
 | `implement-spec` | 0 project knowledge · 1 intake & triage · 2 specification · 3 design |
 | `implement-plan` | 4 technical plan with interface contracts · 5 plan review + checkpoint |
-| `implement-build` | 6 tests first · 7 implementation + full quality gates |
+| `implement-build` | 6 tests first (defects and known interfaces) · 7 implementation + fast quality gates |
 | `implement-review` | 8 code review (fresh reviewers, max two rounds) |
-| `implement-verify` | 9 verification of every acceptance criterion with evidence |
+| `implement-verify` | 9 the one run of the regression scripts, with evidence per acceptance criterion |
 | `implement-deliver` | 10 PR decision · 11 PR, ticket comment and status |
 | `implement-feedback` | a feedback round (PR comments, test results) through the same pipeline |
 

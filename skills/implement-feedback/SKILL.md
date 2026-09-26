@@ -26,13 +26,13 @@ Read `PIPELINE.md` in the `implement` skill directory (`../implement/PIPELINE.md
 
 Scope for the phase skills is the set of ACs marked in `feedback.md` (defects → their AC; changes → the new/amended ACs). First size the delta (PIPELINE.md → *Size classes*) and record it in `state.md`.
 
-**XS express path** (delta touches ≤ 3 files, a few dozen lines, no interface change): the orchestrator does the build itself — strengthen or rewrite the affected tests, run them red, apply the fix, run lint plus the affected test files, then the full gates — then one fresh read-only reviewer (`implement-review` rules, patch by path, no built-in `code-review`) and, **after the gates have finished** (shared test backend), `implement-verify` in delta mode; the two may overlap with each other. Blocking findings: fix, gates again, re-verify the affected ACs. Then `implement-deliver` in update mode. Expected wall time in the order of ten minutes plus checkpoints.
+**XS express path** (delta touches ≤ 3 files, a few dozen lines, no interface change): the orchestrator does the build itself — strengthen or rewrite the affected tests, run them red, apply the fix, run lint plus the affected test files, then the fast gates — then one fresh read-only reviewer (`implement-review` rules, patch by path, no built-in `code-review`) and, **after the gates have finished** (shared test backend), `implement-verify` in delta mode; the two may overlap with each other. Blocking findings: fix, gates again, re-verify the affected ACs. Then `implement-deliver` in update mode. Expected wall time in the order of ten minutes plus checkpoints.
 
 **XS text-only path** (only literals behind an existing constant change, see PIPELINE.md): change the source constant and the test constant together, run the affected spec, lint and the full suite; do the completeness grep (old and new literal in `src/`, `tests/`, docs, PR body, ticket comments) yourself instead of briefing a reviewer; update `evidence/expected.json` and re-run the stored evidence script to refresh the affected screenshots; then `implement-deliver` in update mode. Expected wall time a few minutes.
 
 **S and larger:** invoke in order:
 
-1. `implement-build` in delta mode — Phase 6 for the new/changed/defective ACs (red first), Phase 7 fixes, then the orchestrator's full gates.
+1. `implement-build` in delta mode — Phase 6 for the defective ACs (red first; a changed or new AC follows PIPELINE.md ground rule 13), Phase 7 fixes, then the orchestrator's fast gates.
 2. `implement-review` — on the diff since the last round's commit only, exported as `diff-<round>.patch` and passed by path; `medium` effort. For an S-sized delta step 3 starts in parallel with review round 1.
 3. `implement-verify` in delta mode — affected ACs with fresh evidence; one line per unaffected AC stating that the full suite covers it.
 4. `implement-deliver` in update mode — push to the existing branch, PR body round section, replies to the addressed review threads, ticket comment and changed evidence, re-request review.

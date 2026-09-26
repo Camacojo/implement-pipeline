@@ -24,21 +24,21 @@ A review finding that changes a contract is **applied in `contracts.md` in place
 5. **Risks and edge cases** beyond the ACs and how they are handled.
 6. **Rollout notes** — migrations, flags, configuration, cross-repository order, backwards compatibility.
 7. **Verification approach** for Phase 9 — what is demonstrated and how, and where the verifier writes its output (a directory the test runner does not wipe).
+8. **Test mode per test area** (PIPELINE.md ground rule 13): `tests-first` when the area is a defect or the interface the tests call already exists; `with the code` for a new interface, naming the work package that writes those tests and script checks.
 
 Follow the project's architecture conventions; no patterns the codebase does not use unless the spec asks.
 
 ## Phase 5 — Plan review (M/L; skipped for S)
 
-Brief a **fresh** reviewer with `spec.md`, `plan.md`, the project docs and review checklist. It answers in writing:
+Brief a **fresh** reviewer with `spec.md`, `contracts.md`, the *work packages* and *risks* sections of `plan.md` (not the whole file), the project's architecture rules and review checklist. Its target is the contract, because that is what every later agent builds and tests against; it answers in writing, at most one page:
 
-- Every AC covered and mapped to a test?
-- **Per mapped test: can this assertion fail?** Name every test whose assertion restates its own fixture, or whose mechanism lives in a different unit than the file it is mapped to. This one question catches a whole class of dead tests and costs the reviewer nothing.
-- Interface contracts complete enough to write tests **before** implementation? Name every identifier a test author would have to invent, and every helper the contract *calls* but never defines.
-- Architecture and review checklist respected? Name the violated rule.
-- Missing edge cases, risks, a materially simpler approach?
-- Per finding: **blocking** or **non-blocking**.
+- Every AC covered and mapped to a test? **Per mapped test: can this assertion fail?** Name every test whose assertion restates its own fixture, or whose mechanism lives in a different unit than the file it is mapped to.
+- Contracts complete for the tests-first areas? Name every identifier a test author would have to invent, and every helper the contract *calls* but never defines.
+- A rule of the architecture or the review checklist violated? Name the rule.
+- A missing edge case in the contract's own rules (precedence, ordering, empty and conflicting inputs), or a materially simpler approach?
+- Per finding: **blocking** (a test would be written against something wrong or missing) or **non-blocking**.
 
-The planner (or orchestrator for S) resolves blocking findings and appends the resolution. Maximum two rounds; unresolved disagreements go to the user in the checkpoint.
+**Resolution by cost, not by author.** Non-blocking findings and small blocking ones (a missing identifier, a wrong shape, an ordering rule) are applied by the **orchestrator** in `contracts.md` in place, in one edit pass, with one changelog line each in `plan.md`. Only a blocking finding that changes the approach (a different decomposition, a rule the planner has to redesign) resumes the planner with one message naming those findings. Maximum two rounds; unresolved disagreements go to the user in the checkpoint. (Measured: a review of 19 findings, 2 blocking, cost 11 minutes of review and 11 minutes of planner fix round in sequence; the 17 non-blocking edits were one-liners.)
 
 ## Checkpoint (always, also for S)
 
