@@ -21,11 +21,16 @@ Evidence rules — one entry per AC in `evidence/`, index in `evidence.md` (AC �
 - **Text log** (request/response, command output) for everything without a visual — kept in `evidence/` for the PR and the reviewers, not for the ticket.
 - Evidence that does not prove an AC is noise. Test data the verifier changes (e.g. a fixture row) is restored and the restoration verified.
 
-**The walkthrough lives in the project, not in the run.** Before writing anything, look for the project's existing regression script (the project docs name it; in a project without one, create it under `tools/verify/` and say so in the docs). A run **extends** that script with its new checks and re-runs the whole thing; it never starts a fresh script in the evidence folder: a new state directory makes the previous run's script invisible, and every run then rewrites the same walkthrough from scratch.
+**The walkthrough lives in the project, not in the run** (PIPELINE.md → *Verification has one layer*). The checks for the ACs were added to the project's regression scripts in Phase 6 and are green since the gates. The verifier therefore does not write a script of its own — not in `evidence/`, not anywhere: a second script of the same checks costs as much as the first and is invisible to the next run. Its brief is:
 
-The walkthrough is a **stored, re-runnable script** (`evidence/verify.js` or the project's equivalent) that reads its expected values (labels, ids, names) from `evidence/expected.json`, so a later round that only changes values re-runs it without a new agent: update `expected.json`, run the script, copy the output. Later rounds extend the same script instead of writing a new one.
+1. Run the project's scripts with their screenshot/output option pointed at `evidence/` (the project docs name the option; in a project whose scripts cannot save screenshots, add that option to the script — it is a project asset — rather than a separate walkthrough). Copy the run's log to `evidence/`.
+2. Map every AC to the check names and images that prove it, in `evidence.md`. A check that proves an AC is named after it in the script (Phase 6 rule); if an AC has no check, say so and produce the evidence by hand (next step).
+3. Add only what the scripts cannot show: a screenshot of a state the script does not visit, a request/response pair for an error case the script does not send, the proof that data the walkthrough created is gone again. Each such addition is one short log or image and a line in `evidence.md`; if it is a check worth keeping, it goes into the project's script for the next run, not into a run-local file.
+4. Time box: when step 1 covers every AC, the phase is a run and a mapping — minutes, not an hour. The verifier reports what it could not prove rather than building tooling to prove it.
 
-Verifier constraints: one walkthrough; **no full-suite run** (a "suite green" AC references the orchestrator's log from Phase 7/8); output written to a directory the project's test runner does not wipe, copied to `evidence/` immediately.
+Values a re-run needs (ids, labels, names) live in the project's `expected.json` (or equivalent), so a later round that only changes values updates that file and re-runs the script without a new agent.
+
+Verifier constraints: one walkthrough; **no full-suite run** (a "suite green" AC references the orchestrator's log from Phase 7/8); output written to a directory the project's test runner does not wipe, copied to `evidence/` immediately; no test data left behind, and the cleanup proven (a count or a GET before and after).
 
 A failing AC goes back to `implement-build` Phase 7 with the evidence attached; record the loop. The phase completes only when every AC in scope passes.
 
