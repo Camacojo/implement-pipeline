@@ -5,6 +5,9 @@ All notable changes to the implement pipeline are recorded here. The format foll
 
 ## [Unreleased]
 
+### Added
+- `tools/release.sh`: one command to date the changelog, bump the manifests, tag, push and publish a release.
+
 ## [1.1.0] - 2026-09-26
 
 ### Added

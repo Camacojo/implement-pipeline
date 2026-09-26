@@ -50,6 +50,11 @@ Releases are git tags `vX.Y.Z` with a matching version in `.claude-plugin/plugin
 roster; a patch version only fixes or clarifies. Plugin installs pick up a new version with
 `/plugin update`; the symlink install follows `main`, check out a tag to pin a version.
 
+To release: describe the changes under "Unreleased" in `CHANGELOG.md`, commit, then run
+`tools/release.sh 1.2.0`. The script dates the changelog section, sets the version in both manifests,
+commits, tags, pushes and creates the GitHub release. Plugin users only receive changes when the
+version string in the manifests changes, so pushing commits alone reaches nobody but the symlink installs.
+
 ## What the pipeline expects from the environment
 
 - Claude Code with the Agent tool (the pipeline briefs fresh agents for planning, plan review, test authoring, development, code review and verification).
