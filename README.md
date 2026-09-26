@@ -39,6 +39,10 @@ for d in ~/implement-pipeline/skills/*; do ln -s "$d" ~/.claude/skills/$(basenam
 
 Do not install both ways at once.
 
+## Dashboard
+
+`node tools/dashboard/server.js` starts a local page on http://127.0.0.1:4680 that follows every run: phase track, agents with their latest output, files touched per step, and all documents of the run. See `tools/dashboard/README.md`.
+
 ## What the pipeline expects from the environment
 
 - Claude Code with the Agent tool (the pipeline briefs fresh agents for planning, plan review, test authoring, development, code review and verification).
