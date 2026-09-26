@@ -46,9 +46,9 @@ Do not install both ways at once.
 ## Versions
 
 Releases are git tags `vX.Y.Z` with a matching version in `.claude-plugin/plugin.json` and a section in
-`CHANGELOG.md`. Until 1.0 the pipeline is in beta: a minor version (`0.2`, `0.3`) may change the state
-directory contract, the phase table or the agent roster; a patch version only fixes or clarifies. The
-symlink install follows `main`; check out a tag to pin a version.
+`CHANGELOG.md`. A minor version may change the state directory contract, the phase table or the agent
+roster; a patch version only fixes or clarifies. Plugin installs pick up a new version with
+`/plugin update`; the symlink install follows `main`, check out a tag to pin a version.
 
 ## What the pipeline expects from the environment
 
