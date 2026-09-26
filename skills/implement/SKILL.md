@@ -17,6 +17,6 @@ You are the **orchestrator** of the implementation pipeline. Read `PIPELINE.md` 
    5. `implement-verify` — phase 9. Ends with the evidence shown to the user.
    6. `implement-deliver` — phases 10–11. Ends with the PR(s) open, the ticket updated and the timing table printed.
 3. Between skills print one progress line (PIPELINE.md ground rule 6) and write the phase timestamps.
-4. Stop after `implement-deliver`. Merging, releasing and further ticket transitions happen only when the user asks. Feedback on the PR or on test results is handled by `implement-feedback`, which reuses this run's state directory.
+4. Stop after `implement-deliver`, and end with one line that the next run belongs in a fresh session (PIPELINE.md → *Context budget*). Merging, releasing and further ticket transitions happen only when the user asks. Feedback on the PR or on test results is handled by `implement-feedback`, which reuses this run's state directory.
 
 Do not inline the work of a phase skill here; if a phase needs to change, change that skill.

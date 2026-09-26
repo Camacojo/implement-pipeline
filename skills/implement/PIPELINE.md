@@ -66,7 +66,7 @@ If the state directory sits inside a git repository and is not ignored, add `.cl
 
 ## Agent roster
 
-Use the Agent tool; pick the most capable model for reasoning-heavy roles.
+Use the Agent tool (`model` parameter); pick the most capable model for the roles that decide something (planner, plan reviewer, code reviewers, the core-logic developer) and `sonnet` for the roles that follow a written contract. Measured on an L run: the planner and plan reviewer found the four blocking design issues, a code reviewer the one real edge-case bug, while the test authors, script author and verifier produced contract-following work whose only defect was a fixture — that split is what the column below encodes. A `sonnet` developer whose package comes back with more than two blocking review findings is a signal to move that package to the session model next time; note it in `state.md`.
 
 **An agent that has to write a file needs a write-capable agent type.** `Explore` and `Plan` are read-only: they cannot create `plan.md`, `explore.md` or any other artefact, and they end by pasting the document into their final message, which the orchestrator then has to retype. Use `general-purpose` for every role whose deliverable is a file in the state directory (planner, designer, test author, developer, verifier, and reviewers that write their own review). Read-only types stay useful for roles that only answer questions in their final message; when you brief one, say explicitly that the answer goes in the final message and keep it short enough to survive the hand-off.
 
@@ -76,15 +76,24 @@ Use the Agent tool; pick the most capable model for reasoning-heavy roles.
 | 3 | Designer | `general-purpose` | default | spec, project UI/design conventions, existing screens |
 | 4 | Planner (M/L) | `general-purpose` | strongest available (`opus` unless the session model is stronger) | spec, project docs, codebase |
 | 5 | Plan reviewer (M/L) | `general-purpose` | strongest available | spec, plan, project docs, review checklist |
-| 6 | Test author(s) | `general-purpose` | default | spec, contracts, project test conventions |
-| 6 | Verify-script author (when the project has regression scripts) | `general-purpose` | default | spec, contracts, the project's `tools/verify` docs — extends the project's scripts with the new ACs' checks, red first, in parallel with the test authors |
-| 7 | Developer(s) | `general-purpose` | default | spec, plan, work package, test files |
+| 6 | Test author(s) | `general-purpose` | `sonnet` | spec, contracts, project test conventions |
+| 6 | Verify-script author (when the project has regression scripts) | `general-purpose` | `sonnet` | spec, contracts, the project's `tools/verify` docs — extends the project's scripts with the new ACs' checks, red first, in parallel with the test authors |
+| 7 | Developer(s) | `general-purpose` | session model for the package that holds the core logic (the service the plan's risks name); `sonnet` for a package that only follows a contract (controller, validator, repository, form, rows) | spec, plan, work package, test files |
 | 8 | Code reviewer(s) | `general-purpose` + available review skills | strongest available | diff, spec, project docs, review checklist — reads only the code, writes only its review file |
-| 9 | Verifier | `general-purpose` | default | spec, project "how to run" docs, evidence rules — runs the project's scripts for the evidence and adds only what they cannot show |
+| 9 | Verifier | `general-purpose` | `sonnet` | spec, project "how to run" docs, evidence rules — runs the project's scripts for the evidence and adds only what they cannot show |
 
 **Verification has one layer.** The checks for a change live in the project's regression scripts (`tools/verify/*` or whatever the project docs name); they are written in Phase 6 like the tests, they are part of the gates in Phase 7 and after every fix round, and Phase 9 runs them for the evidence. No run writes a second script of the same checks in its state directory. (Measured: a run that let a Phase 7 package extend the scripts and then let the verifier write its own walkthrough spent 44 of 129 minutes on verification scripting.)
 
-**Every brief contains:** the goal; the paths to read first (project docs — name the relevant *sections*, not whole files — spec, plan); what to produce and where; what is **not** allowed (always: no full-suite runs unless the brief says so; no background waits — wait with a blocking loop gated on a timestamp taken before the action; no edits outside the named files); the exact format of the final report. Agents write their report to the state directory; the orchestrator summarises to the user. An agent that stops early is resumed with one message, not re-briefed.
+**Every brief contains:** the goal; the paths to read first (project docs — name the relevant *sections*, not whole files — spec, plan); what to produce and where; what is **not** allowed (always: no full-suite runs unless the brief says so; no background waits — wait with a blocking loop gated on a timestamp taken before the action; no edits outside the named files); the exact format of the final report. **The final report is at most 20 lines** — status, deviations from the plan, counts, the path of the full report; everything else (per-test output, reasoning, listings) goes into the agent's file in the state directory. The orchestrator summarises to the user. An agent that stops early is resumed with one message, not re-briefed.
+
+## Context budget of the orchestrator
+
+The agents keep the building, testing and reviewing out of the orchestrator's context; what still fills it is measured on a six-run session: the runs before it (the sixth run started at 253k tokens), full source files re-read after a compaction (30% of one run's intake), agent reports (24%, each arriving twice — as message and as notification) and the compaction summaries themselves. Rules:
+
+- **One run per session.** The state directory is the memory of a run; nothing of a finished run is needed in context for the next one. After `implement-deliver`, the next run starts in a fresh session (`/clear` or a new session) — the orchestrator says so in its final line.
+- **After a compaction the shortcut "the orchestrator built this area itself" is void.** Phase 2 then uses an `Explore` agent or reads signatures (`grep -n 'function\|public\|export'`) — never whole service files into the orchestrator's context. The same holds when resuming a run in a new session.
+- **Agent reports are 20 lines** (above); the orchestrator reads an agent's file only for the part it needs (`sed -n`), not whole.
+- **Images are opened, not read.** Evidence screenshots go to the user with `open <files>`; a `Read` of a PNG puts the image into the orchestrator's context for nothing.
 
 ## Environment
 

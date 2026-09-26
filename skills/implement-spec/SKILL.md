@@ -36,7 +36,7 @@ For every topic that is missing or ambiguous: analyse code and history (linter c
 
 ## Phase 2 — Specification
 
-1. **Current behaviour.** Read the relevant code; for M/L delegate the fan-out to an `Explore` agent with concrete questions — **unless the orchestrator built or reviewed this area earlier in the same session**, in which case write what you already know into `spec.md` and skip the agent. An explorer that reports back what you wrote an hour ago costs a full agent for no new information. Record findings in `spec.md`.
+1. **Current behaviour.** Read the relevant code; for M/L delegate the fan-out to an `Explore` agent with concrete questions — **unless the orchestrator built or reviewed this area earlier in the same session and no context compaction has happened since** (a compaction leaves a summary, not the code; the shortcut then costs the whole files again in the orchestrator's context — PIPELINE.md → *Context budget*), in which case write what you already know into `spec.md` and skip the agent. An explorer that reports back what you wrote an hour ago costs a full agent for no new information. Record findings in `spec.md`.
 2. **Questions and assumptions.** Material questions (ground rule 5) and, separately, numbered assumptions with defaults. Ask everything at once; wait.
 3. **Design needed?** Only for a new screen, interaction pattern or layout change; a field, column or button in an existing pattern is not. If needed and absent: ask the user to supply one or offer Phase 3.
 4. **Acceptance criteria.** `AC-1 … AC-n`, Given/When/Then, each independently testable: happy path, every error and edge case found, authorization cases, non-functional criteria where relevant. Explicit **Out of scope** list.
