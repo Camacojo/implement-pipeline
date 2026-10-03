@@ -11,8 +11,10 @@ export const PROJECTS_DIR = path.join(os.homedir(), '.claude', 'projects');
 
 const WRITE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const READ_TOOLS = new Set(['Read', 'Grep', 'Glob']);
-const RUN_PATH_RE = /(\/[^\s`'"()]+?)?\/?\.claude\/implement\/([A-Za-z0-9._-]+)/;
+const RUN_PATH_RE = /((?:~|\/)[^\s`'"()]+?)?\/?\.claude\/implement\/([A-Za-z0-9._-]+)/;
 const RUN_NAME_RE = /\brun\s+["“'`]([A-Za-z0-9._-]+)["”'`]/;
+const HOME_PATH_RE = /(?:^|\s|\(|`)((?:~|\/(?:Users|home|opt|srv|var|work))\/[^\s`'"():,]+)/g;
+const expandHome = (p) => p.replace(/^~(?=\/|$)/, os.homedir());
 const PROGRESS_RE = /^[ \t]*(?:[▶✔✓✗⏸⏹⚠]|implement\s*·|\/?implement[-\w]*\s*·)[^\n]*/gmu;
 
 /** Incrementally parsed transcript file. */
@@ -105,10 +107,10 @@ class Agent {
     // A brief that lives in a file ("Read your brief at <path>") carries the phase; read its head once.
     if (this.brief && !this.briefFileRead) {
       this.briefFileRead = true;
-      const m = this.brief.match(/(\/[^\s`'"()]+?\/\.claude\/implement\/[^\s`'"()]+?\.md)/);
+      const m = this.brief.match(/((?:~|\/)[^\s`'"()]+?\/\.claude\/implement\/[^\s`'"()]+?\.md)/);
       if (m) {
         try {
-          const head = (await fs.readFile(m[1], 'utf8')).slice(0, 1500);
+          const head = (await fs.readFile(expandHome(m[1]), 'utf8')).slice(0, 1500);
           if (this.phase == null) { const ph = head.match(/\b(?:phase|fase)\s*(\d{1,2})\b/i); if (ph) this.phase = Number(ph[1]); }
           if (!this.runSlug) { const r = head.match(RUN_NAME_RE); if (r) this.runSlug = r[1]; }
         } catch { /* the brief file is gone or unreadable */ }
@@ -128,12 +130,12 @@ class Agent {
         if (text) {
           this.brief = text;
           const m = text.match(RUN_PATH_RE);
-          if (m) { this.runRoot = (m[1] || '').replace(/[.;!?]+$/, ''); this.runSlug = m[2]; }
+          if (m) { this.runRoot = expandHome((m[1] || '').replace(/[.;!?]+$/, '')); this.runSlug = m[2]; }
           else { const n = text.match(RUN_NAME_RE); if (n) this.runSlug = n[1]; }
           if (!this.runRoot && this.runSlug) {
-            // the brief usually names the project once as an absolute path
-            const roots = [...text.matchAll(/(?:^|\s|\(|`)(\/(?:Users|home|opt|srv|var|work)\/[^\s`'"():,]+)/g)]
-              .map(x => x[1].replace(/[.;!?]+$/, '').replace(/\/$/, '')); // a path at the end of a sentence carries the full stop
+            // the brief usually names the project once as an absolute or ~-prefixed path
+            const roots = [...text.matchAll(HOME_PATH_RE)]
+              .map(x => expandHome(x[1].replace(/[.;!?]+$/, '').replace(/\/$/, ''))); // a path at the end of a sentence carries the full stop
             if (roots.length) this.runRoot = roots.sort((a, b) => a.length - b.length)[0];
           }
           const ph = text.slice(0, 800).match(/\b(?:phase|fase)\s*(\d{1,2})\b/i);
