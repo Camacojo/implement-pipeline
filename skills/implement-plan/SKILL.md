@@ -1,7 +1,7 @@
 ---
 name: implement-plan
 description: Phases 4–5 of the implement pipeline — a technical plan with interface contracts and an AC→test mapping (by the orchestrator for size S, by a Plan agent for M/L), an independent plan review for M/L, and the user's plan checkpoint. Usable standalone to get only a technical plan for an existing spec ("write a technical plan for <ticket>", or the same in the user's language). Triggers on "/implement-plan <slug>".
-allowed-tools: Agent, AskUserQuestion, Read, Grep, Glob, Bash, Edit, Write
+allowed-tools: Agent, AskUserQuestion, Read, Grep, Glob, Bash, Edit, Write, WebSearch, WebFetch
 ---
 
 Read `PIPELINE.md` in the `implement` skill directory (`../implement/PIPELINE.md` relative to this skill's base directory) first. Requires `spec.md`; standalone without one, write a minimal spec from the argument and say so. Writes `plan.md`.
@@ -25,6 +25,7 @@ A review finding that changes a contract is **applied in `contracts.md` in place
 6. **Rollout notes** — migrations, flags, configuration, cross-repository order, backwards compatibility.
 7. **Verification approach** for Phase 9 — what is demonstrated and how, and where the verifier writes its output (a directory the test runner does not wipe).
 8. **Test mode per test area** (PIPELINE.md ground rule 13): `tests-first` when the area is a defect or the interface the tests call already exists; `with the code` for a new interface, naming the work package that writes those tests and script checks.
+9. **External integrations** (PIPELINE.md ground rule 14), when the change calls a third-party API, SDK or provider: per integration the endpoint or API generation chosen, the vendor's current recommendation, source URL and date of lookup, and whether Phase 9 can call it for real. A choice that deviates from the vendor's recommendation (for example to share one adapter) states the cost for current models, not only the convenience.
 
 Follow the project's architecture conventions; no patterns the codebase does not use unless the spec asks.
 
@@ -35,6 +36,7 @@ Brief a **fresh** reviewer with `spec.md`, `contracts.md`, the *work packages* a
 - Every AC covered and mapped to a test? **Per mapped test: can this assertion fail?** Name every test whose assertion restates its own fixture, or whose mechanism lives in a different unit than the file it is mapped to.
 - Contracts complete for the tests-first areas? Name every identifier a test author would have to invent, and every helper the contract *calls* but never defines.
 - A rule of the architecture or the review checklist violated? Name the rule.
+- An external integration (plan item 9) without a documentation source, or chosen against the vendor's current recommendation? The reviewer checks the vendor's documentation itself (WebSearch/WebFetch) rather than trusting the plan or its own memory, and treats a legacy or restricted endpoint for the models the spec names as **blocking**.
 - A missing edge case in the contract's own rules (precedence, ordering, empty and conflicting inputs), or a materially simpler approach?
 - Per finding: **blocking** (a test would be written against something wrong or missing) or **non-blocking**.
 
@@ -42,4 +44,4 @@ Brief a **fresh** reviewer with `spec.md`, `contracts.md`, the *work packages* a
 
 ## Checkpoint (always, also for S)
 
-Present files, interfaces, AC→test mapping, work packages, risks, review outcome — for S together with the specification in one message. Wait for approval; record it with a timestamp in `state.md`, mark phases 4–5 `done`/`skipped`, hand over to `implement-build`.
+Present files, interfaces, AC→test mapping, work packages, risks, external integrations with their sources, review outcome — for S together with the specification in one message. Wait for approval — on an unattended run (PIPELINE.md ground rule 15) the orchestrator records the plan's choices under **Decisions to confirm** instead; record it with a timestamp in `state.md`, mark phases 4–5 `done`/`skipped`, hand over to `implement-build`.

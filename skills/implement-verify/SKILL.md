@@ -30,6 +30,8 @@ Evidence rules — one entry per AC in `evidence/`, index in `evidence.md` (AC �
 
 Values a re-run needs (ids, labels, names) live in the project's `expected.json` (or equivalent), so a later round that only changes values updates that file and re-runs the script without a new agent.
 
+**Integrations that were not called for real** (PIPELINE.md ground rule 14). When an AC depends on an external service and the walkthrough reached it only through a fake server, a mock or a different provider (no key, no account), its verdict in `evidence.md` is `not verified live — <what was substituted>`, not `pass`, and `evidence.md` ends with an **Open risks** section listing each such integration and what a real call would have to show. The phase may complete with these open; they go to the user in Phase 10.
+
 Verifier constraints: one walkthrough; **no full-suite run** (a "suite green" AC references the orchestrator's log from Phase 7/8); output written to a directory the project's test runner does not wipe, copied to `evidence/` immediately; no test data left behind, and the cleanup proven (a count or a GET before and after).
 
 A failing AC goes back to `implement-build` Phase 7 with the evidence attached; record the loop, and re-run only the affected part of the scripts afterwards. The phase completes only when every AC in scope passes and every scripted check is green.

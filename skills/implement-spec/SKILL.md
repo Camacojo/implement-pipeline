@@ -1,7 +1,7 @@
 ---
 name: implement-spec
 description: Phases 0–3 of the implement pipeline — project-knowledge check of the agent docs, intake of a ticket (Jira, GitLab, GitHub issue, …) or description with size triage, specification with material questions, assumptions and testable acceptance criteria, and an optional visual design round. Usable standalone to produce only a specification ("write the spec / acceptance criteria for <ticket>", or the same in the user's language). Triggers on "/implement-spec <ticket or description>".
-allowed-tools: Agent, AskUserQuestion, Read, Grep, Glob, Bash, Edit, Write, Artifact
+allowed-tools: Agent, AskUserQuestion, Read, Grep, Glob, Bash, Edit, Write, Artifact, WebSearch, WebFetch
 ---
 
 Read `PIPELINE.md` in the `implement` skill directory (`../implement/PIPELINE.md` relative to this skill's base directory) first. This skill covers phases 0–3 and writes `state.md`, `spec.md` and `design.md` in the state directory.
@@ -37,7 +37,7 @@ For every topic that is missing or ambiguous: analyse code and history (linter c
 ## Phase 2 — Specification
 
 1. **Current behaviour.** Read the relevant code; for M/L delegate the fan-out to an `Explore` agent with concrete questions — **unless the orchestrator built or reviewed this area earlier in the same session and no context compaction has happened since** (a compaction leaves a summary, not the code; the shortcut then costs the whole files again in the orchestrator's context — PIPELINE.md → *Context budget*), in which case write what you already know into `spec.md` and skip the agent. An explorer that reports back what you wrote an hour ago costs a full agent for no new information. Record findings in `spec.md`.
-2. **Questions and assumptions.** Material questions (ground rule 5) and, separately, numbered assumptions with defaults. Ask everything at once; wait.
+2. **Questions and assumptions.** Material questions (ground rule 5) and, separately, numbered assumptions with defaults. Ask everything at once; wait. An assumption about a third-party service (API generation, model names, limits) is looked up in the vendor's current documentation and carries its source (ground rule 14).
 3. **Design needed?** Only for a new screen, interaction pattern or layout change; a field, column or button in an existing pattern is not. If needed and absent: ask the user to supply one or offer Phase 3.
 4. **Acceptance criteria.** `AC-1 … AC-n`, Given/When/Then, each independently testable: happy path, every error and edge case found, authorization cases, non-functional criteria where relevant. Explicit **Out of scope** list.
 5. **Checkpoint.** Present questions answered, assumptions, ACs, out of scope, design decision. Wait for approval; record the approved version. **Size S:** do not stop here — `implement-plan` presents spec and plan together.

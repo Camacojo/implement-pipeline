@@ -7,6 +7,14 @@ All notable changes to the implement pipeline are recorded here. The format foll
 
 ### Added
 - `tools/release.sh`: one command to date the changelog, bump the manifests, tag, push and publish a release.
+- External integrations are checked against the vendor's current documentation in the spec and plan, the
+  plan review verifies that itself, and an integration that Phase 9 cannot call for real is reported as an
+  open risk instead of a passed AC.
+- Unattended runs record the checkpoints the orchestrator took itself as decisions to confirm, listed
+  first in the Phase 10 report and the PR body.
+
+### Fixed
+- The dashboard reads progress markers that follow a sentence, so feedback rounds show their phases.
 
 ## [1.1.0] - 2026-09-26
 
