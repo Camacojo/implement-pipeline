@@ -16,6 +16,8 @@ const RUN_NAME_RE = /\brun\s+["“'`]([A-Za-z0-9._-]+)["”'`]/;
 const HOME_PATH_RE = /(?:^|\s|\(|`)((?:~|\/(?:Users|home|opt|srv|var|work))\/[^\s`'"():,]+)/g;
 const expandHome = (p) => p.replace(/^~(?=\/|$)/, os.homedir());
 const PROGRESS_RE = /^[ \t]*(?:[▶✔✓✗⏸⏹⚠]|implement\s*·|\/?implement[-\w]*\s*·)[^\n]*/gmu;
+// orchestrators sometimes put the marker after a sentence ("Gates green. ▶ phase 8 …")
+const INLINE_PROGRESS_RE = /[▶✔✓][ \t]*(?:implement[ \t]*·[ \t]*)?(?:phase|fase)[ \t]*\d[^\n]*/giu;
 
 /** Incrementally parsed transcript file. */
 class Transcript {
@@ -246,7 +248,15 @@ class Session {
     if (rec.type !== 'assistant' || !Array.isArray(msg.content)) return;
     for (const b of msg.content) {
       if (b.type === 'text' && b.text) {
+        const covered = [];
         for (const m of b.text.matchAll(PROGRESS_RE)) {
+          covered.push([m.index, m.index + m[0].length]);
+          const line = m[0].trim();
+          if (line.length < 8 || line.length > 300) continue;
+          this.progress.push({ ts, line });
+        }
+        for (const m of b.text.matchAll(INLINE_PROGRESS_RE)) {
+          if (covered.some(([a, z]) => m.index >= a && m.index < z)) continue;
           const line = m[0].trim();
           if (line.length < 8 || line.length > 300) continue;
           this.progress.push({ ts, line });
