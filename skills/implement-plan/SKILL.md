@@ -17,7 +17,7 @@ A review finding that changes a contract is **applied in `contracts.md` in place
 
 `plan.md` **must** contain:
 
-1. **Files to change** per repository, with reason.
+1. **Files to change** per repository, with reason and current line count. A file over the project's size limit (500 lines when the docs name none) gets no new block: the plan puts the addition in a new module, or adds a work package that splits the file first (PIPELINE.md → *Best practices and file size*).
 2. A pointer to `contracts.md` and a **changelog** (empty at first) for contract changes made after the checkpoint.
 3. A one-paragraph design note: the approach, and the alternatives rejected with the reason.
 4. **Work packages** (M/L) with disjoint file sets and dependency order.
@@ -33,6 +33,7 @@ Follow the project's architecture conventions; no patterns the codebase does not
 
 Brief a **fresh** reviewer with `spec.md`, `contracts.md`, the *work packages* and *risks* sections of `plan.md` (not the whole file), the project's architecture rules and review checklist. Its target is the contract, because that is what every later agent builds and tests against; it answers in writing, at most one page:
 
+- Does the plan put new code or checks into a file over the size limit, or name tests and checks after the ticket instead of the behaviour? Blocking: every later agent builds on it.
 - Test mode right per area (ground rule 13)? A tests-first check against an element, attribute or field the change adds is **blocking**: it sends a test author after a UI that does not exist.
 - Every AC covered and mapped to a test? **Per mapped test: can this assertion fail?** Name every test whose assertion restates its own fixture, or whose mechanism lives in a different unit than the file it is mapped to.
 - Contracts complete for the tests-first areas? Name every identifier a test author would have to invent, and every helper the contract *calls* but never defines.

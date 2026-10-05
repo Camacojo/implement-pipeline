@@ -5,6 +5,16 @@ All notable changes to the implement pipeline are recorded here. The format foll
 
 ## [Unreleased]
 
+### Added
+- Reviewers check two things explicitly in every review (Part A0):
+  - best practices for code and tests, including the regression and verification scripts, unless the
+    project docs say otherwise;
+  - file size, with the project's limit or 500 lines by default.
+
+  A change that pushes a file over the limit, or adds a block to a file already over it, is blocking. The
+  plan, the plan review, the briefs and Phase 0 carry the same two rules (PIPELINE.md → *Best practices and
+  file size*).
+
 ### Changed
 - Regression-script checks: a UI check against an element the change adds is written with the code, not
   tests-first. The plan review treats a wrong test mode as blocking.

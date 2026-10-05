@@ -16,7 +16,7 @@ Read `CLAUDE.md` / `AGENTS.md` at the root and in every sub-project, plus the do
 4. **Test conventions** — types, locations, naming, fixtures/test data, how to run all and one.
 5. **Quality gates / definition of done** — the commands that must pass.
 6. **Workflow** — base branch, branch naming, commit format, PR/MR title and body, reviewers, labels, merge policy, release relation.
-7. **Review checklist** — project-specific risks linters do not catch.
+7. **Review checklist** — project-specific risks linters do not catch, the file-size limit (default 500 lines), and any deliberate deviation from the language's or framework's best practices.
 8. **Ticket system** — tracker, project keys, PR linking, the status when work starts and when the PR is ready (exact workflow names), assignment rule, how evidence is attached (tooling, limits).
 9. **Verification** — how to run the app locally, URLs, test accounts/tokens, how to drive the UI and take screenshots, available tooling.
 10. **Design** — UI framework, design system, where designs live, how mockups are made (UI projects only).

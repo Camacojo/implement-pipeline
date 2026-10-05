@@ -90,6 +90,15 @@ Use the Agent tool (`model` parameter); pick the most capable model for the role
 
 **Every brief contains:** the goal; the paths to read first (project docs — name the relevant *sections*, not whole files — spec, plan); what to produce and where; what is **not** allowed (always: no full-suite runs unless the brief says so; no background waits — wait for the agent's *own* action (a rebuild, a restart) with a blocking loop gated on a timestamp taken before it; **never wait for another agent, a file another agent writes, or the orchestrator** — report what is done and what is missing, and end the turn; the orchestrator sends the next input as a message; no edits outside the named files); the exact format of the final report. **The final report is at most 20 lines** — status, deviations from the plan, counts, the path of the full report; everything else (per-test output, reasoning, listings) goes into the agent's file in the state directory. The orchestrator summarises to the user. An agent that stops early is resumed with one message, not re-briefed.
 
+## Best practices and file size
+
+Every agent that writes code is held to two rules, and every reviewer checks both by name (implement-review, Part A0):
+
+1. **Best practices**, for production code and for tests and verification scripts alike: the language's and framework's established practices, unless the project docs explicitly say otherwise. Checks and tests are named after behaviour, not after the ticket; they live in the module of the area they test; each sits at the lowest level that can prove it; scaffolding that served one run is removed before the PR.
+2. **File size**: the limit in the project docs, otherwise 500 lines. An addition to a file over the limit goes into a new module, or the file is split first.
+
+Both apply to test and script files most of all: nobody reviews their structure unless asked to. "Extend the project's scripts, never start a new one" means the same suite with the same runner, not the same file. (Measured: two regression scripts grew from 360 to 5,700 lines in fifteen days, with every run appending a ticket-named block and nothing ever split or removed. By then the agents adding checks spent most of their time finding their way around the file: one script author needed 83 minutes against a 15-minute budget.)
+
 ## Watching agents
 
 An agent that runs long is often not working on the change: of 49 active agent hours measured over two weeks, the slow ones were polling for another agent's output (up to 15 minutes per agent), re-running a several-minute UI walkthrough in full (35 of one developer's 48 minutes), hitting tool timeouts against an environment that was down, or thinking for minutes at a time in a context past 150k tokens after a compaction. The watcher spots these from the transcripts so the orchestrator does not have to read them.
