@@ -24,7 +24,7 @@ A review finding that changes a contract is **applied in `contracts.md` in place
 5. **Risks and edge cases** beyond the ACs and how they are handled.
 6. **Rollout notes** — migrations, flags, configuration, cross-repository order, backwards compatibility.
 7. **Verification approach** for Phase 9 — what is demonstrated and how, and where the verifier writes its output (a directory the test runner does not wipe).
-8. **Test mode per test area** (PIPELINE.md ground rule 13): `tests-first` when the area is a defect or the interface the tests call already exists; `with the code` for a new interface, naming the work package that writes those tests and script checks.
+8. **Test mode per test area** (PIPELINE.md ground rule 13), per regression script too: `tests-first` when the area is a defect or the interface the tests call already exists; `with the code` for a new interface, naming the work package that writes those tests and script checks. A UI check that waits for an element, attribute or row the change adds is a new interface.
 9. **External integrations** (PIPELINE.md ground rule 14), when the change calls a third-party API, SDK or provider: per integration the endpoint or API generation chosen, the vendor's current recommendation, source URL and date of lookup, and whether Phase 9 can call it for real. A choice that deviates from the vendor's recommendation (for example to share one adapter) states the cost for current models, not only the convenience.
 
 Follow the project's architecture conventions; no patterns the codebase does not use unless the spec asks.
@@ -33,6 +33,7 @@ Follow the project's architecture conventions; no patterns the codebase does not
 
 Brief a **fresh** reviewer with `spec.md`, `contracts.md`, the *work packages* and *risks* sections of `plan.md` (not the whole file), the project's architecture rules and review checklist. Its target is the contract, because that is what every later agent builds and tests against; it answers in writing, at most one page:
 
+- Test mode right per area (ground rule 13)? A tests-first check against an element, attribute or field the change adds is **blocking**: it sends a test author after a UI that does not exist.
 - Every AC covered and mapped to a test? **Per mapped test: can this assertion fail?** Name every test whose assertion restates its own fixture, or whose mechanism lives in a different unit than the file it is mapped to.
 - Contracts complete for the tests-first areas? Name every identifier a test author would have to invent, and every helper the contract *calls* but never defines.
 - A rule of the architecture or the review checklist violated? Name the rule.

@@ -5,6 +5,15 @@ All notable changes to the implement pipeline are recorded here. The format foll
 
 ## [Unreleased]
 
+### Changed
+- Regression-script checks: a UI check against an element the change adds is written with the code, not
+  tests-first. The plan review treats a wrong test mode as blocking.
+- A pending red run no longer holds developers: they work in a worktree while the shared stack has to stay
+  unchanged.
+- One author per regression script, in parallel. Each gets a 15-minute budget and is briefed with the
+  script's map instead of the whole file.
+- implement-build starts the agent watcher together with the briefs.
+
 ## [1.2.0] - 2026-10-05
 
 ### Added
