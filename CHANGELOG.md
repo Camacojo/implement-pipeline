@@ -5,6 +5,8 @@ All notable changes to the implement pipeline are recorded here. The format foll
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-05
+
 ### Added
 - `tools/release.sh`: one command to date the changelog, bump the manifests, tag, push and publish a release.
 - External integrations are checked against the vendor's current documentation in the spec and plan, the
@@ -51,6 +53,7 @@ First release as a Claude Code plugin.
   contract in `skills/implement/PIPELINE.md`.
 - A Claude Code plugin manifest and marketplace entry, plus a symlink install for plain `/implement` names.
 
-[Unreleased]: https://github.com/Camacojo/implement-pipeline/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Camacojo/implement-pipeline/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Camacojo/implement-pipeline/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Camacojo/implement-pipeline/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Camacojo/implement-pipeline/releases/tag/v1.0.0
