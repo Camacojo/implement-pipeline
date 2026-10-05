@@ -88,7 +88,38 @@ Use the Agent tool (`model` parameter); pick the most capable model for the role
 
 **Verification has one layer.** The checks for a change live in the project's regression scripts (`tools/verify/*` or whatever the project docs name); they are written in Phase 6 or 7 like the tests (ground rule 13), **with a screenshot call at every UI state that proves an AC**, and the long walkthroughs run **once per run, in Phase 9**, with the screenshot option pointed at `evidence/`: that run is the gate for the scripted checks and the evidence at the same time (the minute-long API script already ran at the fast gate and runs once more here for its evidence log). Not by the script author against the finished code, not again after a fix round. **Only the scripts of the layers the change touches run:** a backend-only delta runs the API walkthrough and not the UI walkthrough (the rendered output did not change; the full suite and the review cover the API contract the UI reads), and within a script only the affected walkthroughs when it has a partial option (measured: a backend-only feedback round spent 7 of its 15 verification minutes on a UI walkthrough that could not change). When a check is red in Phase 9, the fix goes through Phase 7 and only the affected part is re-run: use the script's option to run one walkthrough or scope (`--only <run>`, `--scope`, or whatever the project names); a project whose walkthrough takes more than a couple of minutes and has no such option gets one — it is a project asset like the screenshot option. No run writes a second script of the same checks in its state directory. (Measured: a run that let a Phase 7 package extend the scripts and then let the verifier write its own walkthrough spent 44 of 129 minutes on verification scripting; a later run whose script author added no screenshots made the verifier repeat the whole walkthrough for the images.)
 
-**Every brief contains:** the goal; the paths to read first (project docs — name the relevant *sections*, not whole files — spec, plan); what to produce and where; what is **not** allowed (always: no full-suite runs unless the brief says so; no background waits — wait with a blocking loop gated on a timestamp taken before the action; no edits outside the named files); the exact format of the final report. **The final report is at most 20 lines** — status, deviations from the plan, counts, the path of the full report; everything else (per-test output, reasoning, listings) goes into the agent's file in the state directory. The orchestrator summarises to the user. An agent that stops early is resumed with one message, not re-briefed.
+**Every brief contains:** the goal; the paths to read first (project docs — name the relevant *sections*, not whole files — spec, plan); what to produce and where; what is **not** allowed (always: no full-suite runs unless the brief says so; no background waits — wait for the agent's *own* action (a rebuild, a restart) with a blocking loop gated on a timestamp taken before it; **never wait for another agent, a file another agent writes, or the orchestrator** — report what is done and what is missing, and end the turn; the orchestrator sends the next input as a message; no edits outside the named files); the exact format of the final report. **The final report is at most 20 lines** — status, deviations from the plan, counts, the path of the full report; everything else (per-test output, reasoning, listings) goes into the agent's file in the state directory. The orchestrator summarises to the user. An agent that stops early is resumed with one message, not re-briefed.
+
+## Watching agents
+
+An agent that runs long is often not working on the change: of 49 active agent hours measured over two weeks, the slow ones were polling for another agent's output (up to 15 minutes per agent), re-running a several-minute UI walkthrough in full (35 of one developer's 48 minutes), hitting tool timeouts against an environment that was down, or thinking for minutes at a time in a context past 150k tokens after a compaction. The watcher spots these from the transcripts so the orchestrator does not have to read them.
+
+**Budgets** — active minutes per assignment (the time between the orchestrator's message and the agent's report; the idle time before a fix round does not count), the 90th percentile of the measured runs:
+
+| explore | review | test author | plan / design | developer | verifier |
+|---|---|---|---|---|---|
+| 5 | 10 | 15 | 20 | 25 | 25 |
+
+A package the planner expects to be larger gets `Time budget: <n> min` in its brief; the watcher reads that line.
+
+**Start the watcher** right after briefing the first agent of a phase, in the background (Bash `run_in_background`), and again after it exits while agents are still working:
+
+```
+node <directory of this file>/agent-watch.mjs <state dir> --wait
+```
+
+It exits — and so wakes the orchestrator — when a working agent passes its budget or twice its budget, or shows a new hard signal: sleep-loop polling, a command repeated or running for minutes, a tool timeout, environment errors (connection refused, page timeouts, Docker down), a compaction, an error streak. Each alert is reported once per agent and assignment (`.agent-watch.json` in the state directory); a second watcher for the same run exits at once. Without `--wait` it prints the current report. Not started when no agent runs (S runs the orchestrator builds itself).
+
+**On an alert** the orchestrator decides from the report, reading the agent's transcript tail (`tail -c 20000 <transcript>`) only when the report does not explain it:
+
+- **Justified** — steady progress on a large package, no hard signal: let it run, note the reason; the next alert comes at twice the budget, and then it needs a cause.
+- **Environment** — a service down, a stale build, a collision on the shared test backend: the orchestrator fixes it, then tells the agent in one message (SendMessage) that it is fixed and to continue. Never let the agent repair the environment itself.
+- **Stuck** — polling for another agent, re-running a whole walkthrough, the same failing test over and over, scope creep: one message with the concrete correction (the input it waits for, the partial-run option, the decision it lacks). When that does not help or the context has compacted, stop it (TaskStop) and re-brief a fresh agent with what the transcript already established and a narrower package.
+- **Brief** — a missing contract, an unclear AC, a file outside the package: fix `contracts.md` or the brief, then message the agent.
+
+Prefer a message over a restart: a restart throws away the context the agent has built. Record each alert in `state.md` under **Slow agents** (agent, active minutes, cause, action). A cause that recurs across runs is fixed where it comes from: in the project's docs (a slow script without a partial option, a fragile environment step) or in this skill.
+
+**A package whose agent compacts is too large**: when the watcher reports a compaction, the plan's split was too coarse; note it, and split along the same line next time.
 
 ## Context budget of the orchestrator
 

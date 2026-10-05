@@ -12,9 +12,19 @@ All notable changes to the implement pipeline are recorded here. The format foll
   open risk instead of a passed AC.
 - Unattended runs record the checkpoints the orchestrator took itself as decisions to confirm, listed
   first in the Phase 10 report and the PR body.
+- Watching agents: `skills/implement/agent-watch.mjs` measures each agent's active time against a budget per
+  role and reports polling, repeated or long commands, tool timeouts, environment errors, compactions and
+  error streaks; in `--wait` mode it runs in the background and wakes the orchestrator on the first new
+  alert. PIPELINE.md says how to act on an alert.
+- Agents never wait or poll for another agent's output; they report and end their turn.
+- The dashboard shows gross and net run time (without the time spent waiting for the user) per run and per
+  round, and an agent's working time instead of the time since it started.
+- The code review flags added comments that restate the code or name the ticket.
 
 ### Fixed
 - The dashboard reads progress markers that follow a sentence, so feedback rounds show their phases.
+- The dashboard reloads after a reconnect, so changes missed while the server was down or the laptop slept
+  show up, and a state directory that only holds files of another process is shown as not a pipeline run.
 
 ## [1.1.0] - 2026-09-26
 
