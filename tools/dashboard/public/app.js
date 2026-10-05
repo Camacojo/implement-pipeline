@@ -105,6 +105,7 @@ function renderRun() {
   f('branch').textContent = d.facts.branch || (d.merged && d.merged.branch) || '–';
   f('started').textContent = dayTime(d.startedAt);
   f('updated').textContent = ago(d.updatedAt);
+  renderDuration(f);
 
   renderRounds();
   const round = selectedRound();
@@ -138,6 +139,7 @@ function renderRun() {
   }
   else if (round && round.kind === 'feedback' && !current) now = `<strong>Round ${round.n}.</strong> Feedback recorded${round.items.length ? `: ${round.items.map(i => esc(i.id)).join(', ')}` : ''}; no phase has started yet.`;
   else if (round && round.kind === 'delivery' && d.rounds.length > 1) now = `<strong>Delivered.</strong> ${d.merged ? `${esc(d.merged.branch)} was merged into ${esc(d.merged.into)}. ` : ''}Later rounds are in the tabs above.`;
+  else if (!d.hasTable && !d.docs.length && !d.agents.length) now = `<strong>Not a pipeline run.</strong> This directory has no state file; it only holds ${d.evidence.length ? `${d.evidence.length} screenshot${d.evidence.length === 1 ? '' : 's'}` : 'files'} written by another process.`;
   else if (d.merged) now = `<strong>Delivered.</strong> ${esc(d.merged.branch)} was merged into ${esc(d.merged.into)}${d.merged.at ? ' on ' + dayTime(d.merged.at) : ''}.${d.hasTable ? '' : ' The state file has no phase table; the phases are taken from git.'}`;
   else if (d.status === 'done') now = `<strong>Delivered.</strong> ${d.phases.filter(p => p.status === 'done').length} phases done, ${d.phases.filter(p => p.status === 'skipped').length} skipped.`;
   else if (current) {
@@ -160,6 +162,17 @@ function renderRun() {
   renderAgents();
   renderFiles();
   renderTabs();
+}
+
+function renderDuration(f) {
+  const d = state.detail;
+  const t = d.duration || { gross: 0, net: 0 };
+  const perRound = (d.rounds || []).length > 1
+    ? '\n\n' + d.rounds.map(r => `Round ${r.n}: ${duration(r.gross) || '–'} gross, ${duration(r.net) || '–'} net`).join('\n') : '';
+  f('gross').textContent = duration(t.gross) || '–';
+  f('gross').title = 'From the first to the last activity, including the time spent waiting for you' + perRound;
+  f('net').textContent = duration(t.net) || '–';
+  f('net').title = t.net == null ? 'No transcript found for this run' : 'Only the time the orchestrator or an agent was working: waiting for your answer, an approval or your next message is left out' + perRound;
 }
 
 function selectedRound() {
@@ -205,14 +218,17 @@ function renderAgents() {
   const ol = $('[data-f="agents"]', sec);
   if (!agents.length) { ol.innerHTML = `<li class="muted">${round && round.kind === 'feedback' ? 'No agents have run in this round yet.' : 'No agents have run for this yet. Agents appear here from the transcripts Claude Code keeps.'}</li>`; return; }
   ol.innerHTML = agents.map(a => {
-    const dur = duration((a.state === 'running' ? Date.now() : a.lastAt) - a.startedAt);
+    // An agent that reported and later got a fix round sat idle in between; only its working time counts.
+    const wall = (a.state === 'running' ? Date.now() : a.lastAt) - a.startedAt;
+    const active = (a.spans || []).reduce((n, [x, y]) => n + y - x, 0);
+    const dur = duration(active || wall);
     const open = state.openAgents.has(a.agentId);
     const stateWord = a.state === 'running' ? 'running' : a.state === 'stale' ? 'no activity' : 'done';
     return `<li data-agent="${a.agentId}">
       <div class="agent-row" role="button" tabindex="0" aria-expanded="${open}">
         <span class="dot ${a.state}"></span>
         <span class="who">${esc(agentName(a))}${a.phase != null ? `<span class="chip">phase ${a.phase}</span>` : ''}</span>
-        <span class="meta"><span>${stateWord}</span><span>${dur}</span><span>${tokens(a.usage.output)} out</span><span>${esc((a.model || '').replace(/^claude-/, ''))}</span></span>
+        <span class="meta"><span>${stateWord}</span><span title="${esc(`${duration(active) || '0 min'} working, ${duration(wall)} from start to last report`)}">${dur}</span><span>${tokens(a.usage.output)} out</span><span>${esc((a.model || '').replace(/^claude-/, ''))}</span></span>
         ${a.state === 'running' && a.lastText ? `<p class="agent-last">${esc(a.lastText.text.trim().slice(-300))}</p>` : a.state === 'running' && a.lastTool ? `<p class="agent-last">${esc(a.lastTool.name)} ${esc(a.lastTool.detail)}</p>` : ''}
         ${open ? `<div class="agent-detail" data-detail="${a.agentId}">${renderAgentDetail(a.agentId)}</div>` : ''}
       </div></li>`;
@@ -372,7 +388,8 @@ function scheduleRefresh() {
 function connect() {
   const es = new EventSource('/events');
   const dot = $('#live');
-  es.addEventListener('hello', () => { dot.className = 'live-dot on'; dot.title = 'Connected'; });
+  // A reconnect (server restarted, laptop woke up) may have missed change events: reload once.
+  es.addEventListener('hello', () => { dot.className = 'live-dot on'; dot.title = 'Connected'; if (state.runs.length) scheduleRefresh(); });
   es.addEventListener('change', () => scheduleRefresh());
   es.onerror = () => { dot.className = 'live-dot off'; dot.title = 'Reconnecting…'; };
 }

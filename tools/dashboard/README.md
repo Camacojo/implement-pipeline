@@ -13,6 +13,7 @@ Options: `--port 4680`, `--roots ~/Projects,~/Work` (directories to search for `
 
 - **Runs and phases** — the state directory `<project>/.claude/implement/<slug>/`. The phase table in `state.md` is parsed tolerantly; an optional `events.jsonl` (`{"ts": "...", "phase": 4, "event": "start|done|skipped", "title": "..."}` per line) is honoured when present.
 - **Agents, their output and the files they touched** — the transcripts Claude Code keeps under `~/.claude/projects/`. Every subagent has its own `.jsonl`; the brief names the run's state directory, which is how an agent is matched to a run. The orchestrator's session transcript supplies the agent descriptions, the orchestrator's own edits and the progress lines (`▶ implement · phase …`).
+- **Gross and net time** — gross runs per round from the first to the last activity; net counts only the stretches in which the orchestrator or one of the run's agents was working. The orchestrator counts as waiting after a finished answer, during `AskUserQuestion` and `ExitPlanMode`, and after ten silent minutes mid-turn (a permission prompt or a sleeping laptop). The run header shows the sum over all rounds; the tooltip breaks it down per round.
 - **Live phase** — the state table only changes at phase ends, so the current phase is inferred from running agents and the last progress line.
 
 The transcript format is Claude Code's internal one and may change; everything that depends on it lives in `lib/transcripts.js`.

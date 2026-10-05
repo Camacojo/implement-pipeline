@@ -144,6 +144,35 @@ function buildRounds(run, agents, progress) {
   else if (last.kind === 'feedback' && last.closed) { run.activeRound = null; }
 }
 
+/** Gross and net wall-clock time per round. Gross runs from the round's first to its last activity (until now
+ *  while it runs); net counts only the stretches in which the orchestrator or an agent was working, so the time
+ *  spent waiting for the user's answers, approvals and next message drops out. */
+function durations(run, agents, spans, progress) {
+  const now = Date.now();
+  const byId = new Map(agents.map(a => [a.agentId, a]));
+  const last = run.rounds[run.rounds.length - 1];
+  // Screenshots left in the state directory by other processes can be days older than the run; its documents are not.
+  const docs = (run.files || []).filter(f => f.path.endsWith('.md'));
+  const firstDoc = Math.min(...docs.map(f => f.birth || f.mtime));
+  const lastDoc = Math.max(0, ...docs.map(f => f.mtime));
+  for (const r of run.rounds) {
+    const ag = r.agentIds.map(id => byId.get(id)).filter(Boolean);
+    const at = r.kind === 'delivery' && Number.isFinite(firstDoc) ? firstDoc : r.at;
+    const firstLine = progress.find(p => p.ts >= at - (r.kind === 'delivery' ? 10 * 60000 : 60000) && (r.until == null || p.ts < r.until));
+    const start = Math.min(at, ...ag.map(a => a.startedAt), firstLine ? firstLine.ts : Infinity);
+    const open = r.running || (r === last && run.status === 'active');
+    const end = open ? now : Math.max(r.lastActivity, r === last ? lastDoc : 0);
+    const parts = [...spans, ...ag.flatMap(a => a.spans)]
+      .map(([a, b]) => [Math.max(a, start), Math.min(b, end)]).filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0]);
+    let net = 0, reach = start;
+    for (const [a, b] of parts) { if (b > reach) { net += b - Math.max(a, reach); reach = b; } }
+    r.gross = Math.max(0, end - start);
+    r.net = parts.length ? net : null; // no transcript covers this round
+  }
+  const known = run.rounds.filter(r => r.net != null);
+  run.duration = { gross: run.rounds.reduce((n, r) => n + r.gross, 0), net: known.length ? known.reduce((n, r) => n + r.net, 0) : null };
+}
+
 /** The state table is only updated at phase ends; running agents and the orchestrator's progress lines tell what is happening now. */
 function inferProgress(run, agents, progress) {
   if (run.status === 'done' || run.merged) { clockTimes(run, agents, progress); return; }
@@ -191,6 +220,7 @@ async function runDetail(r) {
   const orchestrator = index.orchestratorForRun(run, agents);
   inferProgress(run, agents, orchestrator.progress);
   buildRounds(run, agents, orchestrator.progress);
+  durations(run, agents, orchestrator.spans, orchestrator.progress);
   // Files touched, merged across agents and orchestrator.
   const touched = new Map();
   const add = (p, who, phase, ts, kind) => {

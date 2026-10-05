@@ -18,6 +18,40 @@ const expandHome = (p) => p.replace(/^~(?=\/|$)/, os.homedir());
 const PROGRESS_RE = /^[ \t]*(?:[▶✔✓✗⏸⏹⚠]|implement\s*·|\/?implement[-\w]*\s*·)[^\n]*/gmu;
 // orchestrators sometimes put the marker after a sentence ("Gates green. ▶ phase 8 …")
 const INLINE_PROGRESS_RE = /[▶✔✓][ \t]*(?:implement[ \t]*·[ \t]*)?(?:phase|fase)[ \t]*\d[^\n]*/giu;
+const WAIT_TOOLS = new Set(['AskUserQuestion', 'ExitPlanMode']);
+const LONG_TOOLS = new Set(['Agent', 'Task', 'Workflow']);
+// Bash times out after 10 minutes, so a longer silence mid-turn is a permission prompt or a sleeping laptop.
+const MAX_GAP = 10 * 60 * 1000;
+
+/** Wall-clock stretches in which a transcript was working rather than waiting for its user. */
+class Activity {
+  constructor() { this.spans = []; this.at = 0; this.waiting = true; this.cap = MAX_GAP; }
+
+  take(rec, ts) {
+    if (!ts) return;
+    if (this.at && !this.waiting && ts > this.at) this.add(this.at, Math.min(ts, this.at + this.cap));
+    if (ts > this.at) this.at = ts;
+    const msg = rec.message || {};
+    if (rec.type === 'user') { this.waiting = false; this.cap = MAX_GAP; return; }
+    if (rec.type !== 'assistant') return;
+    const tools = (Array.isArray(msg.content) ? msg.content : []).filter(b => b.type === 'tool_use').map(b => b.name);
+    if (!tools.length) { if (msg.stop_reason === 'end_turn') this.waiting = true; return; }
+    this.waiting = tools.some(t => WAIT_TOOLS.has(t));
+    this.cap = tools.some(t => LONG_TOOLS.has(t)) ? Infinity : MAX_GAP;
+  }
+
+  add(a, b) {
+    const last = this.spans[this.spans.length - 1];
+    if (last && a <= last[1]) last[1] = Math.max(last[1], b);
+    else this.spans.push([a, b]);
+  }
+
+  /** The spans, with a turn that is still open running until now. */
+  until(now) {
+    if (this.waiting || !this.at) return this.spans;
+    return [...this.spans, [this.at, Math.min(now, this.at + this.cap)]];
+  }
+}
 
 /** Incrementally parsed transcript file. */
 class Transcript {
@@ -30,7 +64,7 @@ class Transcript {
   }
 
   /** Read new bytes since the last call and hand each complete JSON line to `onRecord`. */
-  async advance(onRecord, prefilter) {
+  async advance(onRecord) {
     let st;
     try { st = await fs.stat(this.file); } catch { return false; }
     if (st.size === this.size && st.mtimeMs === this.mtime) return false;
@@ -46,7 +80,7 @@ class Transcript {
         const lines = text.split('\n');
         this.rest = lines.pop();
         for (const line of lines) {
-          if (!line || (prefilter && !prefilter(line))) continue;
+          if (!line) continue;
           let rec;
           try { rec = JSON.parse(line); } catch { continue; }
           onRecord(rec);
@@ -99,6 +133,7 @@ class Agent {
     this.runRoot = '';
     this.runSlug = '';
     this.phase = null;
+    this.activity = new Activity();
   }
 
   async refresh() {
@@ -124,6 +159,7 @@ class Agent {
   take(rec) {
     const ts = rec.timestamp ? Date.parse(rec.timestamp) : 0;
     if (ts) { if (!this.startedAt) this.startedAt = ts; this.lastAt = Math.max(this.lastAt, ts); }
+    this.activity.take(rec, ts);
     if (rec.cwd && !this.cwd) this.cwd = rec.cwd;
     const msg = rec.message || {};
     if (rec.type === 'user') {
@@ -191,6 +227,7 @@ class Agent {
       startedAt: this.startedAt, lastAt: this.lastAt,
       state: this.finished ? 'done' : stale ? 'stale' : 'running',
       turns: this.turns, usage: this.usage,
+      spans: this.activity.until(now),
       toolCount: this.tools.length,
       lastText: lastText ? { ts: lastText.ts, text: lastText.text.slice(-1200) } : null,
       lastTool,
@@ -220,20 +257,18 @@ class Session {
     this.edits = [];             // {ts, path, tool}
     this.progress = [];          // {ts, line}
     this.lastAt = 0;
+    this.activity = new Activity();
   }
 
-  static PREFILTER = (line) =>
-    line.includes('"name":"Agent"') || line.includes('agentId') || line.includes('"name":"Edit"') ||
-    line.includes('"name":"Write"') || line.includes('"name":"MultiEdit"') || line.includes('"name":"NotebookEdit"') ||
-    line.includes('implement') || line.includes('▶') || line.includes('✔');
-
+  // Every line is parsed: the working time needs the timestamps of the records nobody else looks at.
   async refresh() {
-    return this.t.advance(rec => this.take(rec), Session.PREFILTER);
+    return this.t.advance(rec => this.take(rec));
   }
 
   take(rec) {
     const ts = rec.timestamp ? Date.parse(rec.timestamp) : 0;
     if (ts) this.lastAt = Math.max(this.lastAt, ts);
+    this.activity.take(rec, ts);
     if (rec.cwd && !this.cwd) this.cwd = rec.cwd;
     const msg = rec.message || {};
     if (rec.type === 'user') {
@@ -370,13 +405,16 @@ export class TranscriptIndex {
     const sessionIds = new Set(agents.map(a => a.sessionId));
     const edits = [];
     const progress = [];
+    const spans = [];
+    const now = Date.now();
     for (const s of this.sessions.values()) {
       if (!sessionIds.has(s.sessionId)) continue;
+      for (const [a, b] of s.activity.until(now)) if (b > from && a < to) spans.push([Math.max(a, from), Math.min(b, to)]);
       for (const e of s.edits) if (e.ts >= from && e.ts <= to && (e.path.startsWith(run.root + '/') || e.path.startsWith(run.stateDir))) edits.push(e);
       for (const p of s.progress) if (p.ts >= from && p.ts <= to) progress.push(p);
     }
     edits.sort((a, b) => a.ts - b.ts);
     progress.sort((a, b) => a.ts - b.ts);
-    return { edits, progress, sessions: [...sessionIds] };
+    return { edits, progress, spans, sessions: [...sessionIds] };
   }
 }
